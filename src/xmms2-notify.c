@@ -35,67 +35,51 @@ notify_song()
         n = NULL;
     }
 
-    tmp = g_markup_printf_escaped("<big><b>%s</b></big>\n"
-                "<small>by</small> %s <small>from</small> %s [%d]",
-            current.title, current.artist,
-            current.album, current.tracknr);
-
-    switch(current.status)
+    if(current.tracknr > 0)
     {
-        case XMMS_PLAYBACK_STATUS_PLAY:
-            title = g_strdup_printf("%s Currently playing", NOTE);
-            break;
-        case XMMS_PLAYBACK_STATUS_STOP:
-            title = g_strdup_printf("%s Playback stopped", NOTE);
-            break;
-        case XMMS_PLAYBACK_STATUS_PAUSE:
-            title = g_strdup_printf("%s Playback paused", NOTE);
-            break;
-        default:
-            title = g_strdup(NOTE);
+
+        tmp = g_markup_printf_escaped("<big><b>%s</b></big>\n"
+                    "<small>by</small> %s <small>from</small> %s [%d]",
+                current.title, current.artist,
+                current.album, current.tracknr);
+
+        switch(current.status)
+        {
+            case XMMS_PLAYBACK_STATUS_PLAY:
+                title = g_strdup_printf("%s Currently playing", NOTE);
+                break;
+            case XMMS_PLAYBACK_STATUS_STOP:
+                title = g_strdup_printf("%s Playback stopped", NOTE);
+                break;
+            case XMMS_PLAYBACK_STATUS_PAUSE:
+                title = g_strdup_printf("%s Playback paused", NOTE);
+                break;
+            default:
+                title = g_strdup(NOTE);
+        }
+
+        if(current.cover)
+        {
+            p = gdk_pixbuf_scale_simple(current.cover, 48, 48, 
+                    GDK_INTERP_BILINEAR);
+            n = notify_notification_new(title, tmp, NULL, NULL);
+            notify_notification_set_icon_from_pixbuf(n, p);
+            g_object_unref(p);
+        }
+        else
+            n = notify_notification_new(title, tmp, "media-optical", NULL);
+
+        g_free(title);
+        g_free(tmp);
+
+        notify_notification_set_timeout(n, 5000);
+        notify_notification_show(n, NULL);
     }
-
-    if(current.cover)
-    {
-        p = gdk_pixbuf_scale_simple(current.cover, 48, 48, 
-                GDK_INTERP_BILINEAR);
-        n = notify_notification_new(title, tmp, NULL, NULL);
-        notify_notification_set_icon_from_pixbuf(n, p);
-        g_object_unref(p);
-    }
-    else
-        n = notify_notification_new(title, tmp, "media-optical", NULL);
-
-    g_free(title);
-    g_free(tmp);
-
-    notify_notification_set_timeout(n, 5000);
-    notify_notification_show(n, NULL);
-}
-
-int
-on_bindata_retrieve(xmmsv_t *res, void *udata)
-{
-    GdkPixbufLoader *loader;
-    const unsigned char *data;
-    unsigned int len;
-
-    if(xmmsv_get_bin(res, &data, &len) && (len > 0))
-    {
-        loader = gdk_pixbuf_loader_new();
-        gdk_pixbuf_loader_write(loader, data, len, NULL);
-        gdk_pixbuf_loader_close(loader, NULL);
-        current.cover = gdk_pixbuf_loader_get_pixbuf(loader);
-    }
-    notify_song();
 }
 
 void
-set_current_track(xmmsv_t *dict, void *udata)
+current_track_unref()
 {
-    const char *tmp;
-    xmmsc_result_t *res;
-
     if(current.album)
     {
         g_free(current.album);
@@ -121,6 +105,32 @@ set_current_track(xmmsv_t *dict, void *udata)
         g_object_unref(current.cover);
         current.cover = NULL;
     }
+}
+
+int
+on_bindata_retrieve(xmmsv_t *res, void *udata)
+{
+    GdkPixbufLoader *loader;
+    const unsigned char *data;
+    unsigned int len;
+
+    if(xmmsv_get_bin(res, &data, &len) && (len > 0))
+    {
+        loader = gdk_pixbuf_loader_new();
+        gdk_pixbuf_loader_write(loader, data, len, NULL);
+        gdk_pixbuf_loader_close(loader, NULL);
+        current.cover = gdk_pixbuf_loader_get_pixbuf(loader);
+    }
+    notify_song();
+}
+
+void
+set_current_track(xmmsv_t *dict, void *udata)
+{
+    const char *tmp;
+    xmmsc_result_t *res;
+
+    current_track_unref();
 
     if(!xmmsv_dict_entry_get_string(dict, "album", &tmp))
     {
@@ -196,6 +206,7 @@ int
 on_status_change(xmmsv_t *val, void *udata)
 {
     xmmsv_get_int(val, &current.status);
+    notify_song();
 
     return 1;
 }
@@ -248,6 +259,8 @@ main()
 
     notify_uninit();
     xmmsc_unref(conn);
+
+    current_track_unref();
 
     return EXIT_SUCCESS;
 }
