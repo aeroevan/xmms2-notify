@@ -67,6 +67,7 @@ notify_song()
         n = notify_notification_new(title, tmp, "media-optical", NULL);
 
     g_free(title);
+    g_free(tmp);
 
     notify_notification_set_timeout(n, 5000);
     notify_notification_show(n, NULL);
@@ -244,6 +245,9 @@ main()
 
     xmmsc_mainloop_gmain_init(conn);
     g_main_loop_run(ml);
+
+    notify_uninit();
+    xmmsc_unref(conn);
 
     return EXIT_SUCCESS;
 }
