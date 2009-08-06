@@ -1,0 +1,4 @@
+This is a libnotify client for xmms2.
+Nothing more, nothing less.
+
+autoreconf -i -f and configure as usual.
