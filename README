@@ -1,4 +1,8 @@
 This is a libnotify client for xmms2.
 Nothing more, nothing less.
 
-autoreconf -i -f and configure as usual.
+autoreconf -i -f and configure/make as usual.
+
+OPTIONS:
+ -c: notification of current song, then exit. By default, xmms2-notify will run 
+     until xmms2 is quit.
