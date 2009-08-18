@@ -100,7 +100,6 @@ notify_song()
 
         notify_notification_set_timeout(n, 5000);
         notify_notification_show(n, NULL);
-        notify_notification_close(n, NULL);
         g_object_unref(n);
         n = NULL;
     }
