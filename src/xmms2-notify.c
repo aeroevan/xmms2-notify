@@ -48,16 +48,10 @@ void
 notify_song()
 {
     static NotifyNotification *n = NULL;
+    GtkIconTheme *icon_theme;
     GdkPixbuf *p;
     gchar *tmp;
     gchar *title;
-
-    if(n)
-    {
-        notify_notification_close(n, NULL);
-        g_object_unref(n);
-        n = NULL;
-    }
 
     /** We only notify if we have a valid id.
      */
@@ -84,24 +78,29 @@ notify_song()
                 title = g_strdup(NOTE);
         }
 
+        if(n == NULL) {
+            n = notify_notification_new(title, tmp, NULL, NULL);
+        } else {
+            notify_notification_update(n, title, tmp, NULL);
+        }
+
         if(current.cover)
         {
             p = gdk_pixbuf_scale_simple(current.cover, 48, 48, 
                     GDK_INTERP_BILINEAR);
-            n = notify_notification_new(title, tmp, NULL, NULL);
-            notify_notification_set_icon_from_pixbuf(n, p);
-            g_object_unref(p);
         }
         else
-            n = notify_notification_new(title, tmp, "media-optical", NULL);
+        {
+            icon_theme = gtk_icon_theme_get_default();
+            p = gtk_icon_theme_load_icon(icon_theme, "media-optical", 48, 0, NULL);
+        }
+        notify_notification_set_icon_from_pixbuf(n, p);
+        g_object_unref(p);
 
         g_free(title);
         g_free(tmp);
 
-        notify_notification_set_timeout(n, 5000);
         notify_notification_show(n, NULL);
-        g_object_unref(n);
-        n = NULL;
     }
 }
 
@@ -274,6 +273,8 @@ main(int argc, char **argv)
                 return EXIT_FAILURE;
         }
     }
+
+    gtk_init_check(NULL, NULL);
 
     conn = xmmsc_init("XMMS2-Notify");
     notify_init("XMMS2-Notify");
