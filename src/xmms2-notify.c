@@ -22,6 +22,7 @@
 #include <xmmsclient/xmmsclient.h>
 #include <xmmsclient/xmmsclient-glib.h>
 #include <glib.h>
+#include <gtk/gtk.h>
 #include <libnotify/notify.h>
 
 #define UNKNOWN "Unknown"
@@ -58,8 +59,8 @@ notify_song()
     if(current.id != 0)
     {
 
-        tmp = g_markup_printf_escaped("<big><b>%s</b></big>\n"
-                    "<small>by</small> %s <small>from</small> %s [%d]",
+        tmp = g_markup_printf_escaped("<b>%s</b>\n"
+                    "<i>by</i> %s <i>from</i> %s [%d]",
                 current.title, current.artist,
                 current.album, current.tracknr);
 
@@ -79,7 +80,7 @@ notify_song()
         }
 
         if(n == NULL) {
-            n = notify_notification_new(title, tmp, NULL, NULL);
+            n = notify_notification_new(title, tmp, NULL);
         } else {
             notify_notification_update(n, title, tmp, NULL);
         }
